@@ -4,7 +4,8 @@
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 const form = document.querySelector('.form');
-const containerWorkouts = document.querySelector('.workouts');
+
+const containkerWorkouts = document.querySelector('.workouts');
 
 const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
@@ -27,6 +28,8 @@ class App {
         .closest('.form__row')
         .classList.toggle('form__row--hidden');
       inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
+
+      containkerWorkouts.addEventListener('click',this._moveToPopup);
     });
   }
   _getPosition() {
@@ -88,8 +91,14 @@ class App {
       .setPopupContent('workout')
       .openPopup();
   }
+  _moveToPopup(e){
+    const workoutEL=e.taget.closest('.workout');
+    console.log('clicked');
+
+  }
 }
 
 const app = new App();
 
 //♦➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
+

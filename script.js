@@ -18,6 +18,7 @@ const inputElevation = document.querySelector('.form__input--elevation');
 let map, mapEvent;
 
 class Workout {
+  clicks=0;
   date = new Date();
   //id = (new Date() + '').slice(-30);
   id = (Date.now() + '').slice(-30);
@@ -29,6 +30,10 @@ class Workout {
   _setDescription(){
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   this.description=`${this.type[0].toUpperCase()}${this.type.slice(1)} on ${months[this.date.getMonth()]}${this.date.getDate()}`;
+  }
+
+  click(){
+    this.clicks++;
   }
 }
 
@@ -42,9 +47,10 @@ class Running extends Workout {
   }
   calPace() {
     //min/km
-    this.pace = this.duration / this.distance;
+    this.pace = (this.duration / this.distance).toFixed(2);
     return this.pace;
   }
+
 }
 
 class Cycling extends Workout {
@@ -60,18 +66,28 @@ class Cycling extends Workout {
     return this.speed;
   }
 }
-const run1 = new Running([39, -12], 5.2, 24, 178);
-const cyc1 = new Cycling([39, -12], 5.2, 27, 18);
 
 //➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 class App {
+  #mapZoomLavel=13;
   #workout = [];
+  
   constructor() {
+    // get user position
     this._getposition();
+
+    // Get dat from local storage
+    this._getLocalStorage();
+
+
     form.addEventListener('submit', this._newWorkout.bind(this));
 
     inputType.addEventListener('change', this._toggleElevation);
+    containerWorkouts.addEventListener('click',this._moveToPopup.bind(this));
+
   }
+
+  
 
   _getposition() {
     if (navigator.geolocation)
@@ -89,7 +105,7 @@ class App {
     const { latitude, longitude } = position.coords;
     const coords = [latitude, longitude];
 
-    this.map = L.map('map').setView(coords, 13);
+    this.map = L.map('map').setView(coords, this.#mapZoomLavel);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:
@@ -97,6 +113,11 @@ class App {
     }).addTo(this.map);
 
     this.map.on('click', this._showForm.bind(this));
+    
+    this.#workout.forEach(element => {
+            this._renderWorkoutMarker(element);
+    });
+
   }
 
   _showForm(mapE) {
@@ -157,15 +178,18 @@ class App {
 
     // render Workout on list
     this._renderWorkoutMarker(workout);
-this._renderWorkout(workout);
-    // render workout
+
+    // render workout on list
+    this._renderWorkout(workout);
+
+    // set local storage
+    this._setLocalStorage();
 
     // hide form and clear input data
-    inputDistance.value =
-      inputDuration.value =
-      inputElevation.value =
-      inputCadence.value =
-        '';
+    this._hideForm(); 
+
+    // 
+    
   }
   // Display marker
   _renderWorkoutMarker(workout) {
@@ -185,7 +209,7 @@ this._renderWorkout(workout);
   }
 
   _renderWorkout(workout){
-    console.log(workout);
+    // console.log(workout);
     let html=`<li class="workout workout--${workout.type}" data-id="${workout.id}">
     <h2 class="workout__title">${workout.description}</h2>
     <div class="workout__details">
@@ -227,10 +251,60 @@ this._renderWorkout(workout);
 
 form.insertAdjacentHTML('afterend',html);
   }
+
+  _moveToPopup(e) {
+    
+    const workoutEl = e.target.closest('.workout');
+    console.log(workoutEl);
+
+    if(!workoutEl) return;
+
+    const workout =this.#workout.find(work=>work.id===workoutEl.dataset.id);
+    console.log(workout);
+    
+    this.map.setView(workout.coords,this.#mapZoomLavel,{
+      animate:true,
+      pan:{
+        duration:1,
+      }
+    });
+   // calling using public interface
+   //  workout.click();
+  }
+
+   _hideForm(){
+    inputDistance.value =
+    inputDuration.value =
+    inputElevation.value =
+    inputCadence.value =
+      '';
+   }
+  _setLocalStorage(){
+     localStorage.setItem('workout',JSON.stringify(this.#workout));
+  }
+
+  _getLocalStorage(){
+
+    const loadData = JSON.parse(localStorage.getItem('workout'));
+    console.log(loadData );
+
+    if(!loadData) return;
+
+    this.#workout=loadData;
+    this.#workout.forEach(element => {
+      this._renderWorkout(element);
+      
+    });
+
+  }
+
+  reset(){
+    localStorage.removeItem('workout');
+    location.reload();
+  }
+  
 }
+
 const app = new App();
 
-// copy HTML and Java script code from leaflet */
-console.log(true || true);
-console.log(true || false);
-console.log(true && true);
+
